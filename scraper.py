@@ -5,10 +5,10 @@ from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor
 
 # Base URL for the month you want
-BASE_URL = "https://www.ncei.noaa.gov/data/oceans/argo/gadr/data/indian/2013/10/"
+BASE_URL = "https://www.ncei.noaa.gov/data/oceans/argo/gadr/data/indian/2013/09/"
 
 # Local folder to save files
-SAVE_DIR = "argo_data"
+SAVE_DIR = "argo_data_2013_09"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 # Get HTML page
@@ -38,7 +38,7 @@ def download_file(url):
             print(f"❌ Failed: {url} — {e}")
 
 # Run downloads in parallel
-MAX_WORKERS = 10  # Adjust based on your internet speed
+MAX_WORKERS = 30  # Adjust based on your internet speed
 with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
     executor.map(download_file, nc_files)
 
