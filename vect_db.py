@@ -36,7 +36,7 @@ index = faiss.read_index("argo_index.faiss")
 
 #Querying
 # Example query
-query = "Find floats at 10N, 70E on 2013"
+query = "Find floats at 10N, 60E on 2013"
 query_embedding = model.encode([query], convert_to_numpy=True)
 
 # Search
