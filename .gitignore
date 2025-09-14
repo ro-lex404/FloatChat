@@ -3,3 +3,4 @@
 /argo_data_2013_09
 /argo_data_2013-10
 scrape_drive.py
+.env
