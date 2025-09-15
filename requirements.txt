@@ -1,0 +1,11 @@
+xarray
+pandas
+numpy
+requests
+beautifulsoup4
+netCDF4
+tqdm
+python-dateutil
+pytz
+gdown
+os
