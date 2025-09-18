@@ -1,0 +1,15 @@
+# Frontend Dependencies
+streamlit
+requests
+pandas
+folium
+streamlit-folium
+
+# Backend Dependencies
+fastapi
+uvicorn[standard]
+sentence-transformers
+faiss-cpu
+argopy
+google-generativeai
+async-lru
