@@ -275,7 +275,8 @@ with tab1:
 
         if map_data:
             df_map = pd.DataFrame(map_data)
-            df_map['datetime'] = pd.to_datetime(df_map['datetime'])
+            # New, corrected line
+            df_map['datetime'] = pd.to_datetime(df_map['datetime'], errors='coerce')
             unique_floats = df_map.sort_values('datetime', ascending=False).drop_duplicates('float_id')
             
             # Display metrics in a row - INSIDE the card
@@ -497,7 +498,7 @@ with tab2:
         - Compare temperature parameters in the Arabian Sea for the last 6 months
         - What are the nearest ARGO floats to the Indian Ocean?
         - Show me float data from the Bay of Bengal
-        - Display temperature trends for float 2902743
+        - Display temperature trends for float 1900410
         """)
     
     # Simple chat interface with improved styling
