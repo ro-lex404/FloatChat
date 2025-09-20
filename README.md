@@ -109,7 +109,7 @@ python create_vector_db.py
 
 This will generate `argo_faiss.index` and `argo_profile_summaries.csv`.
 
-### 5. Run the Application
+### 6. Run the Application
 You need to run the backend and frontend in two separate terminals.
 
 **Terminal 1: Start the FastAPI Backend**
