@@ -494,7 +494,7 @@ with tab2:
     # Chat examples
     with st.expander("💡 Example Queries"):
         st.markdown("""
-        - Show me salinity profiles near the equator in March 2023
+        - Show me salinity profiles near the equator in September 2013
         - Compare temperature parameters in the Arabian Sea for the last 6 months
         - What are the nearest ARGO floats to the Indian Ocean?
         - Show me float data from the Bay of Bengal
