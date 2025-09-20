@@ -4,7 +4,7 @@ import faiss
 import numpy as np
 import logging
 
-# --- Configuration ---
+# Config
 INPUT_CSV_FILE = 'argo_metadata1.csv'
 FAISS_INDEX_FILE = 'argo_faiss.index'
 METADATA_FILE = 'argo_profile_summaries.csv'
@@ -13,7 +13,7 @@ MODEL_NAME = 'intfloat/e5-base-v2'
 # Setup basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# --- 1. Load and Aggregate Data ---
+# Loading data and aggregeation
 logging.info(f"Loading data from {INPUT_CSV_FILE}...")
 try:
     df = pd.read_csv(INPUT_CSV_FILE)
@@ -36,7 +36,7 @@ agg_df = profile_groups.agg(
 
 logging.info(f"Aggregated data into {len(agg_df)} unique profiles.")
 
-# --- 2. Generate Textual Summaries ---
+# Generate textual summaries
 logging.info("Generating textual summaries for each profile...")
 
 def create_summary_sentence(row):
@@ -56,12 +56,11 @@ def create_summary_sentence(row):
 
 agg_df['summary_text'] = agg_df.apply(create_summary_sentence, axis=1)
 
-# --- 3. Create Vector Embeddings ---
+# Creatin Vector Embedd_n
 logging.info(f"Loading sentence transformer model: '{MODEL_NAME}'...")
 model = SentenceTransformer(MODEL_NAME)
 
 logging.info("Converting text summaries to vector embeddings...")
-# CRITICAL: Use the EXACT same parameters as in app_4.py
 sentences = agg_df['summary_text'].tolist()
 embeddings = model.encode(
     sentences, 
@@ -72,14 +71,12 @@ embeddings = model.encode(
 
 logging.info(f"Created {len(embeddings)} embeddings with dimension {embeddings.shape[1]}.")
 
-# --- 4. Build and Save FAISS Index ---
+# Building and Savin the faiss indx
 logging.info("Building FAISS index...")
 d = embeddings.shape[1]
 
 # Use IndexFlatL2
 index = faiss.IndexFlatL2(d)
-
-# Add the vectors to the index - ensure they are float32
 index.add(embeddings.astype('float32'))
 
 logging.info(f"FAISS index built with {index.ntotal} total vectors.")
@@ -88,6 +85,6 @@ logging.info(f"FAISS index built with {index.ntotal} total vectors.")
 faiss.write_index(index, FAISS_INDEX_FILE)
 logging.info(f"✅ FAISS index saved to {FAISS_INDEX_FILE}")
 
-# --- 5. Save Metadata ---
+# Save meta-data
 agg_df.to_csv(METADATA_FILE, index=False)
 logging.info(f"✅ Metadata and summaries saved to {METADATA_FILE}")
