@@ -1,4 +1,3 @@
-# app.py (Hybrid: Using new files with combined metadata and sensor data)
 import os
 import time
 import re
@@ -17,14 +16,14 @@ from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 from async_lru import alru_cache
 
-# --- RE-INTRODUCE ARGOPY for detailed float data ---
+# API calling for ingesting raw data
 from argopy import DataFetcher as ArgoDataFetcher
 
-# --- Setup logging ---
+# useful for tracing in case of error handling
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- Initialize FastAPI App ---
+# Initialize Fast API 
 app = FastAPI(
     title="FloatChat & Hybrid Data API",
     description="Backend serving map data from CSV and detailed float data from live API."
@@ -39,25 +38,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Global variables ---
+#  Global Variable 
 faiss_index = None
 df_profile_summaries = None
 df_map_data = None
 embedding_model = None
 
-# --- Application Initialization ---
+# Application initialization
 def initialize_application():
     global faiss_index, df_profile_summaries, df_map_data, embedding_model
     try:
         logger.info("Loading FAISS index from argo_faiss.index...")
         faiss_index = faiss.read_index("argo_faiss.index")
         
-        # Load the profile summaries CSV with rich context
+        # Loading profile summaries for CSV files with ample input data
         logger.info("Loading profile summaries from argo_profile_summaries.csv...")
         df_profile_summaries = pd.read_csv("argo_profile_summaries.csv")
         df_profile_summaries['float_id'] = df_profile_summaries['float_id'].astype(str)
         
-        # Create map data from profile summaries (for backward compatibility)
+        # Creating map data from profile summaries (for backward compatibility)
         logger.info("Creating map data from profile summaries...")
         df_map_data = df_profile_summaries.copy()
         if 'datetime' in df_map_data.columns:
@@ -81,10 +80,7 @@ initialize_application()
 class QueryPayload(BaseModel):
     query: str
 
-# ===============================================================
-# --- SECTION 1: DATA ENDPOINTS ---
-# ===============================================================
-
+# Data endpoints  
 @app.get("/api/live/map_data", summary="Get float positions from profile summaries")
 @alru_cache(maxsize=10)
 async def get_live_map_data(region: str = "-180,180,-90,90"):
@@ -92,7 +88,7 @@ async def get_live_map_data(region: str = "-180,180,-90,90"):
     try:
         # Use the profile summaries data for map positions
         if df_map_data is not None and not df_map_data.empty:
-            # Get latest entry for each float
+            # Getting latest entry for each float
             latest_static = (df_map_data.sort_values('datetime', ascending=False)
                            .drop_duplicates('float_id')
                            .reset_index(drop=True))
@@ -145,28 +141,23 @@ async def get_live_float_data(float_id: str):
     logger.info(f"Successfully fetched {len(data)} measurements for float {float_id} from live API.")
     return data
 
-# ===============================================================
-# --- SECTION 2: RAG PIPELINE WITH RICH SUMMARIES ---
-# ===============================================================
-
-# ... (rest of the imports and setup code remains the same)
+# RAG pipelining with ample summaries
 async def run_rag_pipeline(query: str) -> Dict[str, Any]:
-    """Run the RAG pipeline using rich profile summaries."""
     try:
         start_time = time.time()
         
-        # Encode the query - ADD normalize_embeddings=True
+        # Encode the queryembeddings
         query_embedding = embedding_model.encode(query, normalize_embeddings=True, convert_to_numpy=True)
         
-        # Retrieve top 5 most relevant profiles
+        # Retreive top 5 most relevant profiles
         k = 5
         distances, indices = faiss_index.search(np.array([query_embedding]).astype('float32'), k)
         
-        # Get valid indices and retrieve rows
+        # Get valid indices and retreive rows
         valid_indices = [idx for idx in indices[0] if idx != -1 and idx < len(df_profile_summaries)]
         retrieved_rows = df_profile_summaries.iloc[valid_indices]
         
-        # Use the rich summary text for context - FIXED column access
+        # Use the rich summary text for context
         context_lines = []
         for _, row in retrieved_rows.iterrows():
             if 'summary_text' in row and pd.notna(row['summary_text']):
@@ -194,7 +185,7 @@ async def run_rag_pipeline(query: str) -> Dict[str, Any]:
 
         Answer:"""
 
-        # Define the sync function with prompt_template as parameter
+        # Defining the sync function with prompt_template as parameter
         def generate_content_sync(prompt):
             try:
                 model = genai.GenerativeModel("gemini-1.5-flash")
@@ -221,10 +212,7 @@ async def run_rag_pipeline(query: str) -> Dict[str, Any]:
         logger.error(error_msg, exc_info=True)  # Add exc_info for full traceback
         raise HTTPException(status_code=500, detail=error_msg) from e
 
-# ===============================================================
-# --- SECTION 2: RAG PIPELINE WITH RICH SUMMARIES ---
-# ===============================================================
-
+# RAG pipelining with Ample summaries
 @app.post("/query", summary="Process a natural language query via RAG")
 async def handle_query(payload: QueryPayload):
     """Handle natural language queries."""
@@ -232,13 +220,10 @@ async def handle_query(payload: QueryPayload):
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
     return await run_rag_pipeline(payload.query)
 
-# ===============================================================
-# --- SECTION 3: HEALTH CHECK ---
-# ===============================================================
-
+# Checking if the Server is runnnign or not 
+# Helpfu for error detection
 @app.get("/health", summary="Health check")
 async def health_check():
-    """Provides a detailed health check of the API components."""
     return {
         "status": "healthy",
         "mode": "Hybrid (Profile summaries for map, API for details)",
@@ -249,6 +234,6 @@ async def health_check():
         "unique_floats": df_profile_summaries['float_id'].nunique() if df_profile_summaries is not None else 0
     }
 
-# --- Main execution ---
+# Executing the main fn
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
