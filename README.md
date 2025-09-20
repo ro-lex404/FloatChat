@@ -71,8 +71,8 @@ Frontend (Streamlit) → Backend (FastAPI) → Data Sources
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
-cd <repository-folder>
+git clone https://github.com/ro-lex404/FloatChat
+cd FloatChat
 ```
 
 ### 2. Install Dependencies
@@ -91,7 +91,15 @@ export GEMINI_API_KEY="your-gemini-api-key-here"
 set GEMINI_API_KEY="your-gemini-api-key-here"
 ```
 
-### 4. Prepare Data Files
+### 4. Download NetCDF Files (Optional step if you want to work with data of other years)
+Run download_ncfiles.py and then csv_file_obtained.py to download the raw files and then convert it to csv to obtain argo_metadata1.csv
+```bash
+#This script will generate csv file containing all columns like float_id, cycle_number, latitude, longitude, datetime, pressure, temperature, salinity, pres_qc, sal_qc, temp_qc
+python download_ncfiles.py
+python csv_file_obtained.py
+```
+
+### 5. Prepare Data Files
 The RAG system requires a vector index and pre-processed summary files. Run the provided data preparation script to generate them.
 
 ```bash
@@ -106,9 +114,11 @@ You need to run the backend and frontend in two separate terminals.
 
 **Terminal 1: Start the FastAPI Backend**
 ```bash
-python app_4.py
+uvicorn app_4:app --reload
 ```
 The API will be available at http://localhost:8000.
+
+Wait for INFO:Application startup complete
 
 **Terminal 2: Start the Streamlit Frontend**
 ```bash
