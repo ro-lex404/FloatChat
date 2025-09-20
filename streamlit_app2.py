@@ -1,4 +1,3 @@
-# streamlit_app.py (With Selected Float Marker)
 import streamlit as st
 import requests
 import pandas as pd
@@ -6,7 +5,8 @@ import pydeck as pdk
 import time
 import plotly.express as px
 
-# --- UI Configuration ---
+
+# UI config
 st.set_page_config(
     page_title="ARGO Float Data Explorer",
     page_icon="🌊",
@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- Initialize Session State (no changes) ---
+# Initializing the  Session State
 if "selected_float" not in st.session_state:
     st.session_state.selected_float = None
 if "float_data" not in st.session_state:
@@ -26,7 +26,7 @@ if "map_data" not in st.session_state:
 if "last_map_fetch" not in st.session_state:
     st.session_state.last_map_fetch = 0
 
-# --- API Communication & CSS (no changes) ---
+# API comms 
 API_BASE_URL = "http://127.0.0.1:8000"
 
 @st.cache_data(ttl=300)
@@ -56,15 +56,12 @@ def send_chat_query(query):
     except Exception as e:
         return {"answer": f"Sorry, I couldn't process your request: {str(e)}"}
 
-# --- Custom CSS for a professional look ---
+# CSS embedd_n
 st.markdown("""
 <style>
-    /* Main styling */
     .main {
         background-color: #f8f9fa;
     }
-    
-    /* Headers */
     .main-header {
         font-size: 2.5rem;
         color: #0b5394;
@@ -75,7 +72,6 @@ st.markdown("""
         border-bottom: 2px solid #0b5394;
     }
     
-    /* Section headers */
     .section-header {
         font-size: 1.4rem;
         color: #0b5394;
@@ -84,8 +80,6 @@ st.markdown("""
         border-bottom: 1px solid #cfe2f3;
         font-weight: 600;
     }
-    
-    /* Cards */
     .card {
         color:black;
         background-color: white;
@@ -95,8 +89,6 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         border: 1px solid #cfe2f3;
     }
-    
-    /* Float detail card */
     .float-card {
         background-color: #e6f2ff;
         border-left: 4px solid #0b5394;
@@ -105,8 +97,6 @@ st.markdown("""
         margin-bottom: 20px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
-    
-    /* Buttons */
     .stButton button {
         width: 100%;
         border-radius: 6px;
@@ -125,8 +115,6 @@ st.markdown("""
         background: linear-gradient(135deg, #0b5394 0%, #3d85c6 100%);
         color: white;
     }
-    
-    /* Chat messages */
     .chat-message-user {
         color:black;
         background-color: #e6f2ff;
@@ -146,8 +134,6 @@ st.markdown("""
         border-left: 4px solid #3d85c6;
         font-size: 14px;
     }
-    
-    /* Info boxes */
     .info-box {
         color:black;
         background-color: #e6f2ff;
@@ -157,8 +143,6 @@ st.markdown("""
         border-left: 4px solid #0b5394;
         font-size: 14px;
     }
-    
-    /* Warning boxes */
     .warning-box {
         color:black;
         background-color: #fff3cd;
@@ -168,8 +152,6 @@ st.markdown("""
         border-left: 4px solid #ffc107;
         font-size: 14px;
     }
-    
-    /* Tab styling */
     .stTabs [data-baseweb="tab-list"] {
         gap: 10px;
     }
@@ -187,24 +169,16 @@ st.markdown("""
         color: white;
         border-bottom: none;
     }
-    
-    /* Select box styling */
     .stSelectbox div div {
         border-radius: 6px;
         border: 1px solid #ced4da;
     }
-    
-    /* Sidebar styling */
     .css-1d391kg {
         background-color: #f8f9fa;
     }
-    
-    /* Dataframe styling */
     .dataframe {
         font-size: 14px;
     }
-    
-    /* Status indicator */
     .status-indicator {
         display: inline-block;
         width: 10px;
@@ -219,8 +193,6 @@ st.markdown("""
         background-color: #dc3545;
     }
 
-    /* --- MODIFICATION START --- */
-    /* Metric component styling */
     .stMetric {
         background: linear-gradient(135deg, #0b5394 0%, #3d85c6 100%);
         color: white;
@@ -245,7 +217,6 @@ st.markdown("""
         font-weight: bold;
         color: white !important; /* Ensure value is white */
     }
-    /* --- MODIFICATION END --- */
 </style>
 """, unsafe_allow_html=True)
 # --- Main App Layout ---
@@ -279,24 +250,16 @@ with tab1:
             df_map['datetime'] = pd.to_datetime(df_map['datetime'], errors='coerce')
             unique_floats = df_map.sort_values('datetime', ascending=False).drop_duplicates('float_id')
             
-            # Display metrics in a row - INSIDE the card
             col_metric1, col_metric2, col_metric3 = st.columns(3)
             with col_metric1:
-                # --- MODIFICATION START ---
-                # Removed the markdown wrapper
                 st.metric("🌊 Unique Floats", len(unique_floats))
-                # --- MODIFICATION END ---
             with col_metric2:
-                # --- MODIFICATION START ---
                 latest_date = unique_floats['datetime'].max().strftime('%Y-%m-%d')
                 st.metric("📅 Latest Data", latest_date)
-                # --- MODIFICATION END ---
             with col_metric3:
-                # --- MODIFICATION START ---
                 region_count = len(unique_floats[unique_floats['longitude'].between(30, 120) & 
                                                 unique_floats['latitude'].between(-30, 30)])
                 st.metric("🌏 Indian Ocean", region_count)
-                # --- MODIFICATION END ---
             
            # 1. Base layer for ALL floats (a neutral blue color)
             all_floats_layer = pdk.Layer(
@@ -317,33 +280,33 @@ with tab1:
                 pitch=0,
             )
             
-            # 3. Create a list to hold our map layers
+            # List holding our map layers like we are holding te layers of this project 
             layers = [all_floats_layer]
             
-            # 4. If a float is selected, create a special marker layer for it
+            # If a float is selectedthen we can create a "special" marker layer for it
             if st.session_state.selected_float:
                 selected_float_df = unique_floats[unique_floats['float_id'] == st.session_state.selected_float]
                 
                 if not selected_float_df.empty:
                     selected_float_data = selected_float_df.iloc[0]
                     
-                    # Create a prominent red layer for the selected float
+                    # Mark the "chosen one" float 
                     selected_layer = pdk.Layer(
                         "ScatterplotLayer",
                         data=selected_float_df,
                         get_position=["longitude", "latitude"],
-                        get_color=[255, 0, 0, 255],  # Bright red, fully opaque
-                        get_radius=80000, # Make it larger to stand out
-                        pickable=False, # No need to pick this one
+                        get_color=[255, 0, 0, 255],
+                        get_radius=80000, 
+                        pickable=False, 
                     )
                     layers.append(selected_layer)
                     
-                    # 5. Update the view to zoom into the selected float
+                    # Zooming into the "chosen one"
                     view_state.latitude = selected_float_data['latitude']
                     view_state.longitude = selected_float_data['longitude']
                     view_state.zoom = 5 # Zoom in closer
             
-            # 6. Create the Deck with the list of layers
+            # Adding all layers for map-ping
             deck = pdk.Deck(
                 layers=layers, # Use the dynamic list of layers
                 initial_view_state=view_state,
@@ -361,7 +324,7 @@ with tab1:
             
             st.pydeck_chart(deck)
             
-            # Float selection
+            # float selecTion
             st.markdown("---")
             st.markdown('<div class="section-header">Select a Float for Detailed Analysis</div>', unsafe_allow_html=True)
             
@@ -383,7 +346,7 @@ with tab1:
                     st.session_state.selected_float = None
                     st.session_state.float_data = None
 
-            st.markdown('</div>', unsafe_allow_html=True)  # Close the card
+            st.markdown('</div>', unsafe_allow_html=True)  
 
         else:
             st.markdown('<div class="warning-box">No map data available. Check if the backend API is running.</div>', unsafe_allow_html=True)
@@ -412,27 +375,20 @@ with tab1:
                     df_ts['datetime'] = pd.to_datetime(df_ts['datetime'])
                     df_ts.sort_values('datetime', inplace=True)
                     
-                    # Display metrics - INSIDE the card
                     st.markdown('<div class="section-header" style="font-size: 1.2rem;">Measurements Summary</div>', unsafe_allow_html=True)
                     cols = st.columns(3)
                     with cols[0]:
-                        # --- MODIFICATION START ---
                         st.metric("📈 Measurements", len(df_ts))
-                        # --- MODIFICATION END ---
                     if not df_ts['temperature'].isna().all():
                         with cols[1]:
-                            # --- MODIFICATION START ---
                             avg_temp = df_ts['temperature'].mean()
                             st.metric("🌡️ Avg Temp", f"{avg_temp:.2f}°C")
-                            # --- MODIFICATION END ---
                     if not df_ts['salinity'].isna().all():
                         with cols[2]:
-                            # --- MODIFICATION START ---
                             avg_salinity = df_ts['salinity'].mean()
                             st.metric("🧂 Avg Salinity", f"{avg_salinity:.2f} PSU")
-                            # --- MODIFICATION END ---
                     
-                    # SEPARATE charts for temperature and salinity
+                    # Graphing the temp and sal and pres curves 
                     if not df_ts['temperature'].isna().all():
                         st.markdown('<div class="section-header" style="font-size: 1.2rem;">Temperature Data</div>', unsafe_allow_html=True)
                         fig_temp = px.line(df_ts, x='datetime', y='temperature', 
@@ -486,12 +442,11 @@ with tab1:
         else:
             st.markdown('<div class="info-box">👈 Select a float from the map to view detailed data</div>', unsafe_allow_html=True)
         
-        st.markdown('</div>', unsafe_allow_html=True)  # Close the card
+        st.markdown('</div>', unsafe_allow_html=True) 
 
 with tab2:
     st.markdown('<div class="section-header">💬 AI-Powered Chat Interface</div>', unsafe_allow_html=True)
     st.markdown("Ask questions about ARGO floats, ocean data, or specific measurements")
-    # Chat examples
     with st.expander("💡 Example Queries"):
         st.markdown("""
         - Show me salinity profiles near the equator in September 2013
@@ -501,12 +456,11 @@ with tab2:
         - Display temperature trends for float 1900410
         """)
     
-    # Simple chat interface with improved styling
-    for msg in st.session_state.chat_history[-6:]:  # Show only last 6 messages
+    for msg in st.session_state.chat_history[-6:]:  # Showing just the last 6 mesaages (after that i was blocked 😔)
         if msg["role"] == "user":
-            st.markdown(f'<div class="chat-message-user">👤 {msg["content"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="chat-message-user"> 👤💭 {msg["content"]}</div>', unsafe_allow_html=True)
         else:
-            st.markdown(f'<div class="chat-message-assistant">🤖 {msg["content"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="chat-message-assistant">🫧🐟 {msg["content"]}</div>', unsafe_allow_html=True)
     
     if prompt := st.chat_input("Ask about ARGO floats..."):
         st.session_state.chat_history.append({"role": "user", "content": prompt})
@@ -524,7 +478,6 @@ with tab2:
     
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- Sidebar ---
 with st.sidebar:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown('<div class="section-header">ℹ️ About SIH 2025</div>', unsafe_allow_html=True)
@@ -567,8 +520,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.markdown("### 📈 System Status")
-    
-    # Improved status display with better float count logic
+
     if st.session_state.map_data:
         st.success("✅ Connected to data source")
         try:
