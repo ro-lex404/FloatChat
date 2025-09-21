@@ -5,7 +5,6 @@ import re
 import logging
 from typing import List, Optional, Dict, Any
 import asyncio
-
 import pandas as pd
 import faiss
 import numpy as np
@@ -115,7 +114,7 @@ def fetch_from_source(fetcher_source, numeric_fid):
     """Try to fetch data from a specific source"""
     try:
         logger.info(f"Trying to fetch data from {fetcher_source} for float {numeric_fid}")
-        fetcher = ArgoDataFetcher(src=fetcher_source, cache=True, timeout=20)
+        fetcher = ArgoDataFetcher(src=fetcher_source, cache=True, timeout=30)
         ds = fetcher.float(numeric_fid).to_dataframe()
         
         if ds is None or ds.empty:
@@ -385,7 +384,7 @@ async def standardize_query_with_gemini(query: str) -> str:
         
         def generate_standardization_sync(prompt):
             try:
-                model = genai.GenerativeModel("gemini-1.5-flash")
+                model = genai.GenerativeModel("gemini-2.5-flash")
                 response = model.generate_content(prompt)
                 return response.text.strip()
             except Exception as e:
@@ -462,7 +461,7 @@ async def run_rag_pipeline(query: str) -> Dict[str, Any]:
         # define the sync function with prompt_template parameter
         def generate_content_sync(prompt):
             try:
-                model = genai.GenerativeModel("gemini-1.5-flash")
+                model = genai.GenerativeModel("gemini-2.5-flash")
                 response = model.generate_content(prompt)
                 return response
             except Exception as e:

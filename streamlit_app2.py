@@ -540,7 +540,7 @@ with tab2:
         - Show me salinity profiles near the equator in August 2020
         - What are the nearest ARGO floats to the Indian Ocean?
         - Show me float data from the Bay of Bengal
-        - Display temperature trends for float 1900410
+        - Display temperature trends for float 2902212
         """)
     
     # Chat history display

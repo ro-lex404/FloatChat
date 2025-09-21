@@ -1,3 +1,4 @@
+#Scrape raw nc files from ncei website for a given month and then save to local
 import os
 import requests
 from bs4 import BeautifulSoup
@@ -5,10 +6,10 @@ from urllib.parse import urljoin
 from concurrent.futures import ThreadPoolExecutor
 
 # Base URL for the month you want
-BASE_URL = "https://www.ncei.noaa.gov/data/oceans/argo/gadr/data/indian/2013/09/"
+BASE_URL = "https://www.ncei.noaa.gov/data/oceans/argo/gadr/data/indian/2020/08/"
 
 # Local folder to save files
-SAVE_DIR = "argo_data_2013_09"
+SAVE_DIR = "argo_data_2020_08"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 # Get HTML page

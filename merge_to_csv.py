@@ -6,7 +6,7 @@ import numpy as np
 import logging
 
 # --- Configuration ---
-NC_FILES_DIRECTORY = './argo_data_2013_09/'
+NC_FILES_DIRECTORY = './argo_data_2020_08/'
 OUTPUT_CSV_FILE = 'argo_metadata1.csv'
 
 # Setup basic logging
