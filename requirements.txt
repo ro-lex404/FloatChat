@@ -1,15 +1,19 @@
-# Frontend Dependencies
+# --- Frontend (for streamlit_app2.py) ---
 streamlit
-requests
 pandas
-folium
-streamlit-folium
+requests
+pydeck
+plotly
 
-# Backend Dependencies
+# --- Backend (for app_4.py) ---
 fastapi
-uvicorn[standard]
-sentence-transformers
-faiss-cpu
-argopy
-google-generativeai
-async-lru
+uvicorn[standard]      # Includes standard dependencies for production server
+python-dotenv          # To load environment variables like GEMINI_API_KEY
+google-generativeai    # For Gemini API integration
+sentence-transformers  # For creating text embeddings
+faiss-cpu              # For the vector store (use faiss-gpu if you have a compatible GPU)
+argopy                 # For fetching ARGO float data
+async-lru              # For asynchronous caching in FastAPI
+
+# --- Common/Implicit Dependencies (good to have explicit) ---
+numpy
