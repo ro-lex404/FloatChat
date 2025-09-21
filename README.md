@@ -157,3 +157,8 @@ You can view interactive API documentation at http://localhost:8000/docs.
 - Google for the powerful Gemini models that enable our natural language interface
 - The developers and communities behind FastAPI, Streamlit, FAISS, and the entire Python data science ecosystem
 - Smart India Hackathon 2025 for providing the platform and opportunity to build innovative solutions
+
+<img width="1315" height="648" alt="image" src="https://github.com/user-attachments/assets/e32873f6-1dd7-4a2f-b77c-6c8660778547" />
+<img width="1299" height="661" alt="image" src="https://github.com/user-attachments/assets/60255752-f70b-4167-a6c1-0cb4af1a0338" />
+
+
