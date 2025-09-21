@@ -115,7 +115,7 @@ def fetch_from_source(fetcher_source, numeric_fid):
     """Try to fetch data from a specific source"""
     try:
         logger.info(f"Trying to fetch data from {fetcher_source} for float {numeric_fid}")
-        fetcher = ArgoDataFetcher(src=fetcher_source, cache=True, timeout=15)
+        fetcher = ArgoDataFetcher(src=fetcher_source, cache=True, timeout=20)
         ds = fetcher.float(numeric_fid).to_dataframe()
         
         if ds is None or ds.empty:
@@ -348,13 +348,72 @@ async def get_available_floats():
         logger.error(f"Error in debug endpoint: {e}")
         return {"error": str(e)}
 
-# RAG pipelining with ample summaries
+async def standardize_query_with_gemini(query: str) -> str:
+    """
+    Use Gemini AI to standardize user queries into a structured format that matches the profile summary structure.
+    This provides more intelligent and context-aware standardization.
+    """
+    try:
+        # Use Gemini to standardize the query
+        standardization_prompt = f"""
+        You are an expert query standardization system for ARGO float oceanographic data.
+        
+        Convert the user's natural language query into a standardized format that would match
+        the structure of ARGO float profile summaries. The summaries follow this pattern:
+        
+        "ARGO float [FLOAT_ID] on cycle [CYCLE] reported data on [DATE] at location [LAT]°[DIR], [LON]°[DIR]. 
+        The profile measured temperatures from [MIN_TEMP]°C to [MAX_TEMP]°C and salinities around [SALINITY] PSU."
+        
+        Examples of standardization:
+        - "show me temperature for float 1901302" → "ARGO float 1901302 temperature data"
+        - "what's the salinity in bay of bengal?" → "ARGO floats in Bay of Bengal salinity"
+        - "compare float 123 and 456" → "comparison between ARGO float 123 and ARGO float 456"
+        - "data from august 2020" → "ARGO float data from August 2020"
+        
+        Key rules:
+        1. Always include "ARGO float" or "ARGO floats" in the standardized query
+        2. Preserve all specific parameters (temperature, salinity, pressure, location, time)
+        3. Remove conversational filler words ("show me", "what is", etc.)
+        4. Maintain the original intent but make it search-friendly
+        5. If location is mentioned, include it in standardized form
+        6. If time period is mentioned, include it properly formatted
+        
+        User query: "{query}"
+        
+        Standardized query:"""
+        
+        def generate_standardization_sync(prompt):
+            try:
+                model = genai.GenerativeModel("gemini-1.5-flash")
+                response = model.generate_content(prompt)
+                return response.text.strip()
+            except Exception as e:
+                logger.error(f"Gemini standardization error: {str(e)}")
+                return query  # Fallback to original query
+        
+        # Execute the standardization in a thread
+        standardized_query = await asyncio.to_thread(generate_standardization_sync, standardization_prompt)
+        
+        # Basic cleanup to ensure consistency
+        standardized_query = re.sub(r'\s+', ' ', standardized_query).strip()
+        
+        logger.info(f"Query standardized by Gemini: '{query}' -> '{standardized_query}'")
+        return standardized_query
+        
+    except Exception as e:
+        logger.warning(f"Gemini query standardization failed: {e}, using original query")
+        return query
+
+# RAG pipelining with ample summaries - MODIFIED TO USE GEMINI STANDARDIZATION
 async def run_rag_pipeline(query: str) -> Dict[str, Any]:
     try:
         start_time = time.time()
         
-        # Encode the query embeddings
-        query_embedding = embedding_model.encode(query, normalize_embeddings=True, convert_to_numpy=True)
+        # Standardize the query using Gemini
+        standardized_query = await standardize_query_with_gemini(query)
+        
+        # Encode the standardized query embeddings
+        query_embedding = embedding_model.encode(standardized_query, normalize_embeddings=True, convert_to_numpy=True)
         
         # Retrieve all top 5 most relevant profiles
         k = 5
@@ -372,23 +431,31 @@ async def run_rag_pipeline(query: str) -> Dict[str, Any]:
         
         context = "\n---\n".join(context_lines)
         
-        # context there or not.
+        # Check if we have any context
         if not context.strip():
             logger.warning("No relevant context found for query")
             return {
                 "answer": "I couldn't find any relevant data to answer your question in the available ARGO float database.",
                 "context": "",
-                "retrieved_count": 0
+                "retrieved_count": 0,
+                "original_query": query,
+                "standardized_query": standardized_query
             }
-        #KEY WORD "ONLY" TO ENSURE GEMINI DOES NOT "HALLUCINATE" ANSWERS
+
         prompt_template = f"""
         You are an expert oceanographer. Answer the user's question based *only* on the following context provided from the ARGO float database.
         If the context does not contain the answer, say that you cannot find the information in the available data.
 
-        Context:
+        Original user question: {query}
+        Standardized search query: {standardized_query}
+        
+        Context from ARGO float database:
         {context}
 
         Question: {query}
+
+        Provide a comprehensive answer using only the information from the context. If the context contains
+        multiple relevant profiles, synthesize the information into a coherent response.
 
         Answer:"""
 
@@ -412,20 +479,32 @@ async def run_rag_pipeline(query: str) -> Dict[str, Any]:
         return {
             "answer": answer,
             "context": context,
-            "retrieved_count": len(retrieved_rows)
+            "retrieved_count": len(retrieved_rows),
+            "original_query": query,
+            "standardized_query": standardized_query
         }
     except Exception as e:
         error_msg = f"Error in RAG pipeline: {str(e)}"
         logger.error(error_msg, exc_info=True)
         raise HTTPException(status_code=500, detail=error_msg) from e
 
-# RAG endpoint
-@app.post("/query", summary="Process a natural language query via RAG")
+# Update the QueryPayload response model to include the new fields
+class QueryResponse(BaseModel):
+    answer: str
+    context: str
+    retrieved_count: int
+    original_query: str
+    standardized_query: str
+
+# RAG endpoint - update to use the new response model
+@app.post("/query", summary="Process a natural language query via RAG", response_model=QueryResponse)
 async def handle_query(payload: QueryPayload):
     """Handle natural language queries."""
     if not payload.query:
         raise HTTPException(status_code=400, detail="Query cannot be empty.")
-    return await run_rag_pipeline(payload.query)
+    
+    result = await run_rag_pipeline(payload.query)
+    return result
 
 # Health endpoint to check whichever data sources are working
 #ADDED TO SHOW IF PROFILE SUMMARIES ARE LOADED, FAISS INDEX AND EMBEDDING MODEL

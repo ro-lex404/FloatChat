@@ -548,9 +548,9 @@ with tab2:
     with chat_container:
         for msg in st.session_state.chat_history[-6:]:
             if msg["role"] == "user":
-                st.markdown(f'<div class="chat-message-user">👤 {msg["content"]}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="chat-message-user">👤💬 {msg["content"]}</div>', unsafe_allow_html=True)
             else:
-                st.markdown(f'<div class="chat-message-assistant">🤖 {msg["content"]}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="chat-message-assistant">🐟🫧 {msg["content"]}</div>', unsafe_allow_html=True)
     
     # Chat input at bottom
     if prompt := st.chat_input("Ask about ARGO floats..."):
