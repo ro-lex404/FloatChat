@@ -5,7 +5,6 @@ import pydeck as pdk
 import time
 import plotly.express as px
 
-
 # UI config
 st.set_page_config(
     page_title="ARGO Float Data Explorer",
@@ -14,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initializing the  Session State
+# Initialize Session State
 if "selected_float" not in st.session_state:
     st.session_state.selected_float = None
 if "float_data" not in st.session_state:
@@ -41,12 +40,38 @@ def get_map_data_cached():
 
 def get_float_timeseries(float_id):
     try:
-        response = requests.get(f"{API_BASE_URL}/api/live/float/{float_id}", timeout=15)
-        response.raise_for_status()
-        return response.json()
+        # Ensure float_id is properly formatted
+        float_id_str = str(float_id).strip()
+        st.info(f"🔍 Requesting data for float ID: {float_id_str}")
+        
+        response = requests.get(f"{API_BASE_URL}/api/live/float/{float_id_str}", timeout=30)
+        #FileNotFound, either the float doesn't exist anymore or API is down
+        if response.status_code == 404:
+            st.warning(f"⚠️ Float {float_id_str} not found in live API")
+            return []
+        elif response.status_code != 200:
+            st.error(f"❌ API returned status {response.status_code}: {response.text}")
+            return []
+            
+        data = response.json()
+        
+        if not data:
+            st.warning(f"⚠️ No measurements found for float {float_id_str}")
+            return []
+        else:
+            st.success(f"✅ Retrieved {len(data)} measurements for float {float_id_str}")
+            
+        return data
+        
+    except requests.exceptions.Timeout:
+        st.error(f"⏰ Timeout while fetching data for float {float_id}. The API might be slow.")
+        return []
+    except requests.exceptions.ConnectionError:
+        st.error("🔌 Connection error. Is the backend API running?")
+        return []
     except Exception as e:
-        st.error(f"Failed to load data: {e}")
-        return None
+        st.error(f"❌ Error fetching float data: {str(e)}")
+        return []
 
 def send_chat_query(query):
     try:
@@ -56,7 +81,7 @@ def send_chat_query(query):
     except Exception as e:
         return {"answer": f"Sorry, I couldn't process your request: {str(e)}"}
 
-# CSS embedd_n
+# CSS embed
 st.markdown("""
 <style>
     .main {
@@ -80,8 +105,9 @@ st.markdown("""
         border-bottom: 1px solid #cfe2f3;
         font-weight: 600;
     }
+    
     .card {
-        color:black;
+        color: black;
         background-color: white;
         border-radius: 8px;
         padding: 20px;
@@ -89,14 +115,15 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         border: 1px solid #cfe2f3;
     }
+    
     .float-card {
         background-color: #e6f2ff;
         border-left: 4px solid #0b5394;
-        padding: 18px;
+        padding: 15px;
         border-radius: 8px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-bottom: 15px;
     }
+    
     .stButton button {
         width: 100%;
         border-radius: 6px;
@@ -115,8 +142,9 @@ st.markdown("""
         background: linear-gradient(135deg, #0b5394 0%, #3d85c6 100%);
         color: white;
     }
+    
     .chat-message-user {
-        color:black;
+        color: black;
         background-color: #e6f2ff;
         padding: 12px 16px;
         border-radius: 12px;
@@ -126,7 +154,7 @@ st.markdown("""
     }
     
     .chat-message-assistant {
-        color:black;
+        color: black;
         background-color: #f0f7ff;
         padding: 12px 16px;
         border-radius: 12px;
@@ -134,8 +162,9 @@ st.markdown("""
         border-left: 4px solid #3d85c6;
         font-size: 14px;
     }
+    
     .info-box {
-        color:black;
+        color: black;
         background-color: #e6f2ff;
         padding: 12px 16px;
         border-radius: 8px;
@@ -143,8 +172,9 @@ st.markdown("""
         border-left: 4px solid #0b5394;
         font-size: 14px;
     }
+    
     .warning-box {
-        color:black;
+        color: black;
         background-color: #fff3cd;
         padding: 12px 16px;
         border-radius: 8px;
@@ -152,6 +182,7 @@ st.markdown("""
         border-left: 4px solid #ffc107;
         font-size: 14px;
     }
+    
     .stTabs [data-baseweb="tab-list"] {
         gap: 10px;
     }
@@ -169,30 +200,20 @@ st.markdown("""
         color: white;
         border-bottom: none;
     }
+    
     .stSelectbox div div {
         border-radius: 6px;
         border: 1px solid #ced4da;
     }
+    
     .css-1d391kg {
         background-color: #f8f9fa;
     }
+    
     .dataframe {
         font-size: 14px;
     }
-    .status-indicator {
-        display: inline-block;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        margin-right: 8px;
-    }
-    .status-online {
-        background-color: #28a745;
-    }
-    .status-offline {
-        background-color: #dc3545;
-    }
-
+    
     .stMetric {
         background: linear-gradient(135deg, #0b5394 0%, #3d85c6 100%);
         color: white;
@@ -209,20 +230,26 @@ st.markdown("""
     
     .stMetric label {
         font-size: 14px !important;
-        color: white !important; /* Ensure label is white */
+        color: white !important;
     }
     
     .stMetric div {
         font-size: 20px !important;
         font-weight: bold;
-        color: white !important; /* Ensure value is white */
+        color: white !important;
+    }
+    
+    .compact-chart {
+        height: 250px;
     }
 </style>
 """, unsafe_allow_html=True)
+
 # --- Main App Layout ---
 st.markdown('<h1 class="main-header">🌊 ARGO Float Data Explorer</h1>', unsafe_allow_html=True)
 
-tab1, tab2 = st.tabs(["🌍 Map Dashboard", "💬 AI Chat Interface"])
+#2 main tabs
+tab1, tab2 = st.tabs(["🌍 Map Dashboard", "💬 AI Chat"])
 
 with tab1:
     col1, col2 = st.columns([2, 1])
@@ -236,6 +263,8 @@ with tab1:
             st.rerun()
         
         current_time = time.time()
+        # Cached map data refreshes every 5 minutes
+        # Avoids overloading the API with too frequent requests
         if st.session_state.map_data is None or (current_time - st.session_state.last_map_fetch) > 300:
             with st.spinner("Loading float data..."):
                 map_data = get_map_data_cached()
@@ -246,111 +275,141 @@ with tab1:
 
         if map_data:
             df_map = pd.DataFrame(map_data)
-            # New, corrected line
-            df_map['datetime'] = pd.to_datetime(df_map['datetime'], errors='coerce')
+            # Handle datetime conversion safely
+            if 'datetime' in df_map.columns:
+                df_map['datetime'] = pd.to_datetime(df_map['datetime'], errors='coerce')
             unique_floats = df_map.sort_values('datetime', ascending=False).drop_duplicates('float_id')
             
+            # Ensure float_id is string for consistency
+            unique_floats['float_id'] = unique_floats['float_id'].astype(str)
+            
+            # summary of floats on map
             col_metric1, col_metric2, col_metric3 = st.columns(3)
             with col_metric1:
                 st.metric("🌊 Unique Floats", len(unique_floats))
             with col_metric2:
-                latest_date = unique_floats['datetime'].max().strftime('%Y-%m-%d')
-                st.metric("📅 Latest Data", latest_date)
+                if 'datetime' in unique_floats.columns and not unique_floats['datetime'].isna().all():
+                    latest_date = unique_floats['datetime'].max().strftime('%Y-%m-%d')
+                    st.metric("📅 Latest Data", latest_date)
+                else:
+                    st.metric("📅 Latest Data", "N/A")
             with col_metric3:
-                region_count = len(unique_floats[unique_floats['longitude'].between(30, 120) & 
-                                                unique_floats['latitude'].between(-30, 30)])
-                st.metric("🌏 Indian Ocean", region_count)
+                if 'longitude' in unique_floats.columns and 'latitude' in unique_floats.columns:
+                    region_count = len(unique_floats[unique_floats['longitude'].between(30, 120) & 
+                                                    unique_floats['latitude'].between(-30, 30)])
+                    st.metric("🌍 Indian Ocean", region_count)
+                else:
+                    st.metric("🌍 Indian Ocean", "N/A")
             
-           # 1. Base layer for ALL floats (a neutral blue color)
-            all_floats_layer = pdk.Layer(
-                "ScatterplotLayer",
-                data=unique_floats,
-                get_position=["longitude", "latitude"],
-                get_color=[11, 83, 148, 160],  # Blue, slightly transparent
-                get_radius=50000, # Slightly smaller base radius
-                pickable=True,
-                auto_highlight=True,
-            )
-            
-            # 2. Define the initial view of the map
-            view_state = pdk.ViewState(
-                latitude=20, # Centered more globally
-                longitude=80,
-                zoom=1.5,
-                pitch=0,
-            )
-            
-            # List holding our map layers like we are holding te layers of this project 
-            layers = [all_floats_layer]
-            
-            # If a float is selectedthen we can create a "special" marker layer for it
-            if st.session_state.selected_float:
-                selected_float_df = unique_floats[unique_floats['float_id'] == st.session_state.selected_float]
+            # Base layer for ALL floats
+            if 'longitude' in unique_floats.columns and 'latitude' in unique_floats.columns:
+                all_floats_layer = pdk.Layer(
+                    "ScatterplotLayer",
+                    data=unique_floats,
+                    get_position=["longitude", "latitude"],
+                    get_color=[11, 83, 148, 160],
+                    get_radius=50000,
+                    pickable=True,
+                    auto_highlight=True,
+                )
                 
-                if not selected_float_df.empty:
-                    selected_float_data = selected_float_df.iloc[0]
+                # Initial view state
+                view_state = pdk.ViewState(
+                    latitude=20,
+                    longitude=80,
+                    zoom=1.5,
+                    pitch=0,
+                )
+                
+                layers = [all_floats_layer]
+                
+                # Handle the selected float highlighting
+                if st.session_state.selected_float:
+                    selected_float_df = unique_floats[unique_floats['float_id'] == str(st.session_state.selected_float)]
                     
-                    # Mark the "chosen one" float 
-                    selected_layer = pdk.Layer(
-                        "ScatterplotLayer",
-                        data=selected_float_df,
-                        get_position=["longitude", "latitude"],
-                        get_color=[255, 0, 0, 255],
-                        get_radius=80000, 
-                        pickable=False, 
-                    )
-                    layers.append(selected_layer)
-                    
-                    # Zooming into the "chosen one"
-                    view_state.latitude = selected_float_data['latitude']
-                    view_state.longitude = selected_float_data['longitude']
-                    view_state.zoom = 5 # Zoom in closer
+                    if not selected_float_df.empty and 'longitude' in selected_float_df.columns and 'latitude' in selected_float_df.columns:
+                        selected_float_data = selected_float_df.iloc[0]
+                        
+                        # Highlight the selected float in red
+                        selected_layer = pdk.Layer(
+                            "ScatterplotLayer",
+                            data=selected_float_df,
+                            get_position=["longitude", "latitude"],
+                            get_color=[255, 0, 0, 255],  # Red
+                            get_radius=80000,
+                            pickable=False,
+                        )
+                        layers.append(selected_layer)
+                        
+                        # Update view to center on selected float
+                        view_state.latitude = selected_float_data['latitude']
+                        view_state.longitude = selected_float_data['longitude']
+                        view_state.zoom = 5
+                
+                # Create the deck with tooltip
+                deck = pdk.Deck(
+                    layers=layers,
+                    initial_view_state=view_state,
+                    tooltip={
+                        "html": """
+                        <div style="padding: 10px; background-color: #0b5394; color: white; border-radius: 5px;">
+                        <b>Float ID:</b> {float_id}<br/>
+                        <b>Lat:</b> {latitude}<br/>
+                        <b>Lon:</b> {longitude}<br/>
+                        <b>Click to select this float.</b>
+                        </div>
+                        """,
+                    },
+                    map_style="light",
+                    height=400
+                )
+                
+                # Render the map and capture click events
+                map_result = st.pydeck_chart(deck, use_container_width=True)
+            else:
+                st.warning("Map data missing required latitude/longitude columns")
             
-            # Adding all layers for map-ping
-            deck = pdk.Deck(
-                layers=layers, # Use the dynamic list of layers
-                initial_view_state=view_state,
-                tooltip={
-                    "html": """
-                    <div style="padding: 10px; background-color: #0b5394; color: white; border-radius: 5px;">
-                    <b>Float ID:</b> {float_id}<br/>
-                    <b>Click to select this float.</b>
-                    </div>
-                    """,
-                },
-                map_style="light",
-                height=400
-            )
-            
-            st.pydeck_chart(deck)
-            
-            # float selecTion
+            # Float selection section
             st.markdown("---")
             st.markdown('<div class="section-header">Select a Float for Detailed Analysis</div>', unsafe_allow_html=True)
             
             float_options = [""] + sorted(unique_floats['float_id'].tolist())
+            
+            # Find the index of currently selected float for the selectbox
+            current_index = 0
+            if st.session_state.selected_float:
+                try:
+                    current_index = float_options.index(str(st.session_state.selected_float))
+                except ValueError:
+                    current_index = 0
+            
             selected_id = st.selectbox(
                 "Choose a Float ID:",
                 options=float_options,
-                index=0,
+                index=current_index,
                 key="float_select"
             )
+            
+            # Update session state when selectbox changes
+            if selected_id and selected_id != st.session_state.selected_float:
+                st.session_state.selected_float = selected_id
+                st.session_state.float_data = None
+                st.rerun()
             
             col_btn1, col_btn2 = st.columns(2)
             with col_btn1:
                 if st.button("📊 Load Float Data", key="load_btn", use_container_width=True) and selected_id:
                     st.session_state.selected_float = selected_id
                     st.session_state.float_data = None
+                    st.rerun()
             with col_btn2:
                 if st.button("🗑️ Clear Selection", key="clear_btn", use_container_width=True):
                     st.session_state.selected_float = None
                     st.session_state.float_data = None
-
-            st.markdown('</div>', unsafe_allow_html=True)  
+                    st.rerun()
 
         else:
             st.markdown('<div class="warning-box">No map data available. Check if the backend API is running.</div>', unsafe_allow_html=True)
-            st.markdown('<div class="info-box">The app will use cached data from the CSV file if API is unavailable.</div>', unsafe_allow_html=True)
 
     with col2:
         st.markdown('<div class="section-header">Float Details</div>', unsafe_allow_html=True)
@@ -361,107 +420,139 @@ with tab1:
             st.success(f"Selected Float: **{float_id}**")
             st.markdown('</div>', unsafe_allow_html=True)
             
+            # Load float data if not already loaded
             if st.session_state.float_data is None:
                 with st.spinner(f"Loading detailed data for float {float_id}..."):
                     data = get_float_timeseries(float_id)
-                    if data:
-                        st.session_state.float_data = data
-                        st.rerun()
+                    st.session_state.float_data = data
+                    if not data:
+                        st.markdown('<div class="warning-box">⚠️ No detailed data available for this float.</div>', unsafe_allow_html=True)
                     else:
-                        st.markdown('<div class="warning-box">No detailed data available for this float</div>', unsafe_allow_html=True)
-            else:
+                        st.rerun()
+            
+            # Display float data if available
+            if st.session_state.float_data:
                 df_ts = pd.DataFrame(st.session_state.float_data)
                 if not df_ts.empty:
-                    df_ts['datetime'] = pd.to_datetime(df_ts['datetime'])
-                    df_ts.sort_values('datetime', inplace=True)
+                    # Handle datetime conversion safely
+                    datetime_col = None
+                    for col in df_ts.columns:
+                        if 'date' in col.lower() or 'time' in col.lower():
+                            datetime_col = col
+                            break
+                    
+                    if datetime_col:
+                        df_ts[datetime_col] = pd.to_datetime(df_ts[datetime_col], errors='coerce')
+                        df_ts.sort_values(datetime_col, inplace=True)
                     
                     st.markdown('<div class="section-header" style="font-size: 1.2rem;">Measurements Summary</div>', unsafe_allow_html=True)
                     cols = st.columns(3)
                     with cols[0]:
                         st.metric("📈 Measurements", len(df_ts))
-                    if not df_ts['temperature'].isna().all():
+                    
+                    # Temperature metrics
+                    temp_col = None
+                    for col in df_ts.columns:
+                        if 'temp' in col.lower():
+                            temp_col = col
+                            break
+                    
+                    if temp_col and not df_ts[temp_col].isna().all():
                         with cols[1]:
-                            avg_temp = df_ts['temperature'].mean()
+                            avg_temp = df_ts[temp_col].mean()
                             st.metric("🌡️ Avg Temp", f"{avg_temp:.2f}°C")
-                    if not df_ts['salinity'].isna().all():
+                    
+                    # Salinity metrics
+                    salinity_col = None
+                    for col in df_ts.columns:
+                        if 'sal' in col.lower():
+                            salinity_col = col
+                            break
+                    
+                    if salinity_col and not df_ts[salinity_col].isna().all():
                         with cols[2]:
-                            avg_salinity = df_ts['salinity'].mean()
+                            avg_salinity = df_ts[salinity_col].mean()
                             st.metric("🧂 Avg Salinity", f"{avg_salinity:.2f} PSU")
                     
-                    # Graphing the temp and sal and pres curves 
-                    if not df_ts['temperature'].isna().all():
-                        st.markdown('<div class="section-header" style="font-size: 1.2rem;">Temperature Data</div>', unsafe_allow_html=True)
-                        fig_temp = px.line(df_ts, x='datetime', y='temperature', 
-                                         title="Temperature Over Time")
+                    # Temperature chart
+                    if temp_col and not df_ts[temp_col].isna().all() and datetime_col:
+                        st.markdown("**Temperature Data**")
+                        fig_temp = px.line(df_ts, x=datetime_col, y=temp_col)
                         fig_temp.update_layout(
-                            height=250, 
+                            height=200, 
                             plot_bgcolor='rgba(0,0,0,0)',
                             paper_bgcolor='rgba(0,0,0,0)',
                             font=dict(color='#2c3e50'),
-                            margin=dict(l=20, r=20, t=40, b=20)
+                            margin=dict(l=20, r=20, t=20, b=20),
+                            showlegend=False
                         )
                         fig_temp.update_traces(line=dict(color='#e74c3c'))
                         st.plotly_chart(fig_temp, use_container_width=True)
                     
-                    if not df_ts['salinity'].isna().all():
-                        st.markdown('<div class="section-header" style="font-size: 1.2rem;">Salinity Data</div>', unsafe_allow_html=True)
-                        fig_salinity = px.line(df_ts, x='datetime', y='salinity', 
-                                             title="Salinity Over Time")
+                    # Salinity chart
+                    if salinity_col and not df_ts[salinity_col].isna().all() and datetime_col:
+                        st.markdown("**Salinity Data**")
+                        fig_salinity = px.line(df_ts, x=datetime_col, y=salinity_col)
                         fig_salinity.update_layout(
-                            height=250, 
+                            height=200, 
                             plot_bgcolor='rgba(0,0,0,0)',
                             paper_bgcolor='rgba(0,0,0,0)',
                             font=dict(color='#2c3e50'),
-                            margin=dict(l=20, r=20, t=40, b=20)
+                            margin=dict(l=20, r=20, t=20, b=20),
+                            showlegend=False
                         )
                         fig_salinity.update_traces(line=dict(color='#3498db'))
                         st.plotly_chart(fig_salinity, use_container_width=True)
                     
-                    # Show pressure data if available
-                    if not df_ts['pressure'].isna().all():
-                        st.markdown('<div class="section-header" style="font-size: 1.2rem;">Pressure Data</div>', unsafe_allow_html=True)
-                        fig_pressure = px.line(df_ts, x='datetime', y='pressure', 
-                                             title="Pressure Over Time")
+                    # Pressure chart (if available)
+                    pressure_col = None
+                    for col in df_ts.columns:
+                        if 'pres' in col.lower():
+                            pressure_col = col
+                            break
+                    
+                    if pressure_col and not df_ts[pressure_col].isna().all() and datetime_col:
+                        st.markdown("**Pressure Data**")
+                        fig_pressure = px.line(df_ts, x=datetime_col, y=pressure_col)
                         fig_pressure.update_layout(
                             height=200, 
                             plot_bgcolor='rgba(0,0,0,0)',
                             paper_bgcolor='rgba(0,0,0,0)',
                             font=dict(color='#2c3e50'),
-                            margin=dict(l=20, r=20, t=40, b=20)
+                            margin=dict(l=20, r=20, t=20, b=20),
+                            showlegend=False
                         )
                         st.plotly_chart(fig_pressure, use_container_width=True)
                     
-                    with st.expander("📋 Sample Data (first 10 rows)"):
-                        st.dataframe(df_ts.head(10).style.format({
-                            'temperature': '{:.2f}',
-                            'salinity': '{:.2f}',
-                            'pressure': '{:.1f}'
-                        }))
+                    with st.expander("📋 Sample Data"):
+                        st.dataframe(df_ts.head(10), use_container_width=True)
                 else:
-                    st.markdown('<div class="warning-box">No measurement data available for this float</div>', unsafe_allow_html=True)
+                    st.warning("No data available for this float")
         else:
             st.markdown('<div class="info-box">👈 Select a float from the map to view detailed data</div>', unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True) 
 
 with tab2:
     st.markdown('<div class="section-header">💬 AI-Powered Chat Interface</div>', unsafe_allow_html=True)
     st.markdown("Ask questions about ARGO floats, ocean data, or specific measurements")
+    
     with st.expander("💡 Example Queries"):
         st.markdown("""
-        - Show me salinity profiles near the equator in September 2013
-        - Compare temperature parameters in the Arabian Sea for the last 6 months
+        - Show me salinity profiles near the equator in August 2020
         - What are the nearest ARGO floats to the Indian Ocean?
         - Show me float data from the Bay of Bengal
         - Display temperature trends for float 1900410
         """)
     
-    for msg in st.session_state.chat_history[-6:]:  # Showing just the last 6 mesaages (after that i was blocked 😔)
-        if msg["role"] == "user":
-            st.markdown(f'<div class="chat-message-user"> 👤💭 {msg["content"]}</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(f'<div class="chat-message-assistant">🫧🐟 {msg["content"]}</div>', unsafe_allow_html=True)
+    # Chat history display
+    chat_container = st.container()
+    with chat_container:
+        for msg in st.session_state.chat_history[-6:]:
+            if msg["role"] == "user":
+                st.markdown(f'<div class="chat-message-user">👤 {msg["content"]}</div>', unsafe_allow_html=True)
+            else:
+                st.markdown(f'<div class="chat-message-assistant">🤖 {msg["content"]}</div>', unsafe_allow_html=True)
     
+    # Chat input at bottom
     if prompt := st.chat_input("Ask about ARGO floats..."):
         st.session_state.chat_history.append({"role": "user", "content": prompt})
         
@@ -475,12 +566,9 @@ with tab2:
     if st.button("🗑️ Clear Chat History", use_container_width=True):
         st.session_state.chat_history = []
         st.rerun()
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
 with st.sidebar:
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.markdown('<div class="section-header">ℹ️ About SIH 2025</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">ℹ️ About</div>', unsafe_allow_html=True)
     st.markdown("""
     **AI-Powered Conversational System for ARGO Float Data**
     
@@ -492,14 +580,12 @@ with st.sidebar:
     - **Live API**: Real-time float positions and measurements
     - **Static Metadata**: Fallback data from processed NetCDF files
     - **AI Integration**: RAG pipeline with Gemini API for intelligent queries
-    - **Vector Database**: FAISS for efficient similarity search
     """)
     
     st.markdown("### 🛠️ Technical Stack")
     st.info("""
     - **Backend**: FastAPI with async processing
     - **Frontend**: Streamlit for interactive visualization
-    - **Database**: Structured data from NetCDF files
     - **AI**: Retrieval-Augmented Generation (RAG) pipeline
     """)
     
@@ -514,7 +600,7 @@ with st.sidebar:
     st.markdown("### 🔧 Controls")
     if st.button("🔄 Clear All Cache", use_container_width=True):
         st.cache_data.clear()
-        for key in list(st.session_state.keys()):
+        for key in st.session_state.keys():
             del st.session_state[key]
         st.rerun()
     
@@ -528,9 +614,7 @@ with st.sidebar:
                 float_count = len(st.session_state.map_data)
                 unique_floats = len(set([float_item.get('float_id', '') for float_item in st.session_state.map_data]))
                 st.info(f"📊 {float_count} data points from {unique_floats} unique floats")
-            else:
-                st.info("📊 Map data loaded successfully")
-        except Exception as e:
+        except Exception:
             st.info("📊 Map data loaded successfully")
     else:
         st.warning("⚠️ Using fallback data")
