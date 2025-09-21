@@ -354,7 +354,7 @@ async def standardize_query_with_gemini(query: str) -> str:
     This provides more intelligent and context-aware standardization.
     """
     try:
-        # Use Gemini to standardize the query
+        # gemini standardizes query
         standardization_prompt = f"""
         You are an expert query standardization system for ARGO float oceanographic data.
         
@@ -369,6 +369,7 @@ async def standardize_query_with_gemini(query: str) -> str:
         - "what's the salinity in bay of bengal?" → "ARGO floats in Bay of Bengal salinity"
         - "compare float 123 and 456" → "comparison between ARGO float 123 and ARGO float 456"
         - "data from august 2020" → "ARGO float data from August 2020"
+        - "data of float 123 and 456" → "ARGO float 123 and ARGO float 456 data"
         
         Key rules:
         1. Always include "ARGO float" or "ARGO floats" in the standardized query
@@ -404,26 +405,25 @@ async def standardize_query_with_gemini(query: str) -> str:
         logger.warning(f"Gemini query standardization failed: {e}, using original query")
         return query
 
-# RAG pipelining with ample summaries - MODIFIED TO USE GEMINI STANDARDIZATION
+# RAG pipelining with ample summaries, uses standardization from above
 async def run_rag_pipeline(query: str) -> Dict[str, Any]:
     try:
         start_time = time.time()
         
-        # Standardize the query using Gemini
         standardized_query = await standardize_query_with_gemini(query)
         
-        # Encode the standardized query embeddings
+        # encode to embeddings using intfloat/e5-base-v2
         query_embedding = embedding_model.encode(standardized_query, normalize_embeddings=True, convert_to_numpy=True)
         
-        # Retrieve all top 5 most relevant profiles
-        k = 5
+        # Retrieve all top 10 most relevant profiles(more context)
+        k = 10
         distances, indices = faiss_index.search(np.array([query_embedding]).astype('float32'), k)
         
         # Get valid indices and retrieve rows
         valid_indices = [idx for idx in indices[0] if idx != -1 and idx < len(df_profile_summaries)]
         retrieved_rows = df_profile_summaries.iloc[valid_indices]
         
-        # Use the rich summary text for context
+        # Use summary_text from profile summaries
         context_lines = []
         for _, row in retrieved_rows.iterrows():
             if 'summary_text' in row and pd.notna(row['summary_text']):
@@ -431,7 +431,7 @@ async def run_rag_pipeline(query: str) -> Dict[str, Any]:
         
         context = "\n---\n".join(context_lines)
         
-        # Check if we have any context
+        # any context is available or not
         if not context.strip():
             logger.warning("No relevant context found for query")
             return {
@@ -488,7 +488,7 @@ async def run_rag_pipeline(query: str) -> Dict[str, Any]:
         logger.error(error_msg, exc_info=True)
         raise HTTPException(status_code=500, detail=error_msg) from e
 
-# Update the QueryPayload response model to include the new fields
+#queryresponse includes things like original query, standardized query, context used etc
 class QueryResponse(BaseModel):
     answer: str
     context: str
