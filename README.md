@@ -4,6 +4,7 @@
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue?logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-green?logo=fastapi)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-red?logo=streamlit)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 A sophisticated conversational AI system for exploring and analyzing ARGO float oceanographic data. This application, built for the Smart India Hackathon 2025, combines a real-time data visualization dashboard with a powerful natural language query interface.
 
