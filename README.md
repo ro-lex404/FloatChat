@@ -99,7 +99,7 @@ set GEMINI_API_KEY="your-gemini-api-key-here"
 Delete `argo_faiss.index`, `argo_profile_summaries.csv` and `argo_metadata1.csv` to avoid file conflicts in further steps.
 
 ### 5. Download NetCDF Files 
-Run download_ncfiles.py and then csv_file_obtained.py to download the raw files and then convert it to csv to obtain `argo_metadata1.csv`
+Run `download_ncfiles.py` and then csv_file_obtained.py to download the raw files and then convert it to csv to obtain `argo_metadata1.csv`
 ```bash
 #This script will generate csv file containing all columns like float_id, cycle_number, latitude, longitude, datetime, pressure, temperature, salinity, pres_qc, sal_qc, temp_qc
 python download_ncfiles.py
