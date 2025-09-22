@@ -214,20 +214,6 @@ st.markdown("""
         font-size: 14px;
     }
     
-    .stMetric {
-        background: linear-gradient(135deg, #0b5394 0%, #3d85c6 100%);
-        color: white;
-        border-radius: 8px;
-        padding: 15px;
-        text-align: center;
-        margin-bottom: 15px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        min-height: 85px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    
     .stMetric label {
         font-size: 14px !important;
         color: white !important;
@@ -416,7 +402,7 @@ with tab1:
         
         if st.session_state.selected_float:
             float_id = st.session_state.selected_float
-            st.markdown(f'<div class="float-card">', unsafe_allow_html=True)
+            st.markdown('<div class="float-card">', unsafe_allow_html=True)
             st.success(f"Selected Float: **{float_id}**")
             st.markdown('</div>', unsafe_allow_html=True)
             
