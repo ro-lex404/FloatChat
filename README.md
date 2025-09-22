@@ -93,15 +93,20 @@ export GEMINI_API_KEY="your-gemini-api-key-here"
 set GEMINI_API_KEY="your-gemini-api-key-here"
 ```
 
-### 4. Download NetCDF Files (Optional step if you want to work with data of other years)
-Run download_ncfiles.py and then csv_file_obtained.py to download the raw files and then convert it to csv to obtain argo_metadata1.csv
+### Steps 4 through 6 are optional since we already include the required files for running the application on data from August 2020. However if you want to use for other months and years you have to follow these steps.
+
+### 4. Delete existing files (Best practice) 
+Delete `argo_faiss.index`, `argo_profile_summaries.csv` and `argo_metadata1.csv` to avoid file conflicts in further steps.
+
+### 5. Download NetCDF Files 
+Run download_ncfiles.py and then csv_file_obtained.py to download the raw files and then convert it to csv to obtain `argo_metadata1.csv`
 ```bash
 #This script will generate csv file containing all columns like float_id, cycle_number, latitude, longitude, datetime, pressure, temperature, salinity, pres_qc, sal_qc, temp_qc
 python download_ncfiles.py
 python csv_file_obtained.py
 ```
 
-### 5. Prepare Data Files
+### 6. Prepare Data Files (requires `argo_metadata1.csv`)
 The RAG system requires a vector index and pre-processed summary files. Run the provided data preparation script to generate them.
 
 ```bash
@@ -111,7 +116,7 @@ python create_vector_db.py
 
 This will generate `argo_faiss.index` and `argo_profile_summaries.csv`.
 
-### 6. Run the Application
+### 7. Run the Application (requires `argo_faiss.index` and `argo_profile_summaries`)
 You need to run the backend and frontend in two separate terminals.
 
 **Terminal 1: Start the FastAPI Backend**
