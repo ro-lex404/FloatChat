@@ -14,6 +14,7 @@ A sophisticated conversational AI system for exploring and analyzing ARGO float 
 - [📦 Installation & Setup](#-installation--setup)
 - [🎯 Usage](#-usage)
 - [🔍 API Endpoints](#-api-endpoints)
+- [🐛 Troubleshooting](#-troubleshooting)
 - [🌟 Acknowledgments](#-acknowledgments)
 
 ## 🚀 Key Features
@@ -103,6 +104,7 @@ Run `download_ncfiles.py` and then csv_file_obtained.py to download the raw file
 ```bash
 #This script will generate csv file containing all columns like float_id, cycle_number, latitude, longitude, datetime, pressure, temperature, salinity, pres_qc, sal_qc, temp_qc
 python download_ncfiles.py
+#wait for completion
 python csv_file_obtained.py
 ```
 
@@ -116,7 +118,7 @@ python create_vector_db.py
 
 This will generate `argo_faiss.index` and `argo_profile_summaries.csv`.
 
-### 7. Run the Application (requires `argo_faiss.index` and `argo_profile_summaries`)
+### 7. Run the Application (requires `argo_faiss.index` and `argo_profile_summaries.csv`)
 You need to run the backend and frontend in two separate terminals.
 
 **Terminal 1: Start the FastAPI Backend**
@@ -157,6 +159,13 @@ The FastAPI backend provides the following key endpoints:
 - **GET /health**: A health check endpoint to verify that all components (FAISS index, data files, models) are loaded correctly
 
 You can view interactive API documentation at http://localhost:8000/docs.
+
+## 🐛 Troubleshooting
+
+### Common Issues
+- **Port conflicts**: If ports 8000 or 8501 are busy, change them in `uvicorn`/`streamlit` commands
+- **API key errors**: Ensure `GEMINI_API_KEY` is set in your environment variables
+- **Data file issues**: Delete and regenerate `argo_faiss.index` if you encounter loading errors
 
 ## 🌟 Acknowledgments
 
