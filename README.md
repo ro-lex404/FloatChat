@@ -32,7 +32,9 @@ A sophisticated conversational AI system for exploring and analyzing ARGO float 
 ### 💬 AI-Powered Chat Interface
 - **Natural Language Queries**: A dedicated chat tab allows users to ask complex questions about ocean data in plain English.
 - **RAG Pipeline**: Utilizes a Retrieval-Augmented Generation (RAG) pipeline with a `FAISS` vector database to find the most relevant data to answer user questions.
+- **Vector Database**: Utilizes Sentence Transformer (intfloat/e5-base-v2). Data is first converted to sentences and then converted to vector embeddings and stored for quick retrieval by FAISS.
 - **Gemini 1.5 Flash Integration**: Powered by Google's `gemini-1.5-flash` model for intelligent, context-aware, and accurate responses based on retrieved data.
+- **Multilingual Support**: Supports multiple languages, to enhance user experience.
 - **Conversational Memory**: The interface displays the last 6 messages, providing context for follow-up questions.
 
 ## 🏗️ Architecture Overview
@@ -52,7 +54,7 @@ Frontend (Streamlit) → Backend (FastAPI) → Data Sources
 
 ### Backend
 - **Framework**: FastAPI for high-performance, asynchronous API endpoints
-- **Data Retrieval**: Argopy to fetch live, detailed time-series data from the ERDDAP source
+- **Data Retrieval**: Argopy to fetch live, detailed time-series data from multiple sources (ERDDAP, GDAC, Argovis) and switches dynamically to reduce downtime.
 - **Vector Search**: FAISS for efficient similarity search on ocean data summaries
 - **AI & Embeddings**: Google Gemini 1.5 Flash for generation and SentenceTransformer (intfloat/e5-base-v2) for text embeddings
 - **Caching**: async-lru for in-memory caching of expensive API calls
