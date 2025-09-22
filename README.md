@@ -16,6 +16,7 @@ A sophisticated conversational AI system for exploring and analyzing ARGO float 
 - [🔍 API Endpoints](#-api-endpoints)
 - [🐛 Troubleshooting](#-troubleshooting)
 - [🌟 Acknowledgments](#-acknowledgments)
+- [📸 Visual Gallery](#-visual-gallery)
 
 ## 🚀 Key Features
 
@@ -174,7 +175,17 @@ You can view interactive API documentation at http://localhost:8000/docs.
 - The developers and communities behind FastAPI, Streamlit, FAISS, and the entire Python data science ecosystem
 - Smart India Hackathon 2025 for providing the platform and opportunity to build innovative solutions
 
-<img width="1315" height="648" alt="image" src="https://github.com/user-attachments/assets/e32873f6-1dd7-4a2f-b77c-6c8660778547" />
-<img width="1299" height="661" alt="image" src="https://github.com/user-attachments/assets/60255752-f70b-4167-a6c1-0cb4af1a0338" />
+## 📸 Visual Gallery
 
+### 🌍 Interactive Map Dashboard
+![Map Dashboard](screenshots/dashboard-overview.png)
+*Global view of ARGO float positions with real-time data loading*
+
+### 📊 Data Visualization
+![Data Charts](screenshots/data-charts.png)
+*Multi-parameter analysis with temperature, salinity, and pressure profiles*
+
+### 💬 AI Chat Interface  
+![Chat Interface](screenshots/chat-interface.png)
+*Natural language queries with context-aware responses*
 
