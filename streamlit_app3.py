@@ -1,4 +1,4 @@
-# streamlit_app2.py (Fixed version)
+# MODIFIED streamlit_app2.py to include voice feature
 import streamlit as st
 import requests
 import pandas as pd
@@ -63,52 +63,64 @@ def get_map_data_cached():
 # In your streamlit_app3.py - Replace the speech processing functions:
 
 def continuous_listening_thread(stop_event, stop_phrase="stop listening"):
-    """Run continuous listening in a separate thread and put results in queue"""
+    """
+    Runs the listening generator in a thread.
+    Its ONLY job is to take text from the generator and put it on the queue.
+    """
     try:
-        for text in continuous_listening(stop_event, stop_phrase):
-            if text and text.strip():  # Only send non-empty text
-                print(f"Putting text in queue: '{text}'")
-                speech_results_queue.put({"text": text, "type": "continuous"})
-        
-        # Signal that we've stopped naturally (due to stop phrase)
-        speech_results_queue.put({"type": "stopped", "reason": "stop_phrase"})
-        
+        for text_fragment in continuous_listening(stop_event, stop_phrase):
+            if text_fragment and text_fragment.strip():
+                # Put each valid fragment from the generator into the queue
+                speech_results_queue.put({"type": "continuous", "text": text_fragment})
     except Exception as e:
         print(f"Error in continuous_listening_thread: {e}")
         speech_results_queue.put({"type": "error", "message": str(e)})
+    finally:
+        # Always put a "stopped" message so the main thread knows to clean up.
+        print("Thread is sending 'stopped' message to queue.")
+        speech_results_queue.put({"type": "stopped"})
 
 def process_speech_results():
     """
-    Processes results from the speech queue in the main Streamlit thread.
-    This function updates the session state based on speech events.
+    Processes results from the speech queue. Includes final text cleanup.
     """
     processed_something = False
+    current_text = st.session_state.get("recognized_text", "")
+    
     while not speech_results_queue.empty():
         try:
             result = speech_results_queue.get_nowait()
-            print(f"Processing speech result: {result}")
+            print(f"Processing speech result from queue: {result}")
 
             if result["type"] == "continuous":
-                # Always update recognized_text with new speech input
-                if result["text"] and result["text"].strip():
-                    # Append to existing text or replace based on your preference
-                    # Option 1: Replace existing text
-                    st.session_state.recognized_text = result["text"]
-                    # Option 2: Append to existing text (uncomment if you prefer this)
-                    # if st.session_state.recognized_text:
-                    #     st.session_state.recognized_text += " " + result["text"]
-                    # else:
-                    #     st.session_state.recognized_text = result["text"]
-                    
-                    print(f"Updated recognized_text to: '{st.session_state.recognized_text}'")
-                
+                new_fragment = result.get("text", "").strip()
+                if new_fragment:
+                    updated_text = (current_text + " " + new_fragment).strip()
+                    st.session_state.recognized_text = updated_text
+                    st.session_state.user_input_box_voice = updated_text
+                    current_text = updated_text
                 st.session_state.last_speech_result = "success"
                 processed_something = True
 
             elif result["type"] == "stopped":
-                reason = result.get("reason", "manual")
-                print(f"Listening stopped: {reason}")
+                print("Processing 'stopped' message. Finalizing text and cleaning up state.")
+
+                # --- NEW & IMPORTANT: Final text cleanup logic ---
+                final_text = st.session_state.get("recognized_text", "")
+                stop_phrases_to_clean = ["stop listening", "stop listen", "stop"]
+                for phrase in stop_phrases_to_clean:
+                    if final_text.endswith(phrase):
+                        final_text = final_text[:-len(phrase)].strip()
+                
+                # Update the state with the *cleaned* text
+                st.session_state.recognized_text = final_text
+                st.session_state.user_input_box_voice = final_text
+                # --- END NEW LOGIC ---
+
                 st.session_state.listening = False
+                if st.session_state.continuous_listener and st.session_state.continuous_listener.is_alive():
+                    st.session_state.continuous_listener.join(timeout=0.5)
+                
                 st.session_state.continuous_listener = None
                 st.session_state.stop_listening_event = None
                 processed_something = True
@@ -116,20 +128,22 @@ def process_speech_results():
             elif result["type"] == "error":
                 st.session_state.last_speech_result = f"Speech Error: {result['message']}"
                 st.session_state.listening = False
+                # Cleanup on error as well
+                if st.session_state.continuous_listener and st.session_state.continuous_listener.is_alive():
+                    st.session_state.continuous_listener.join(timeout=0.5)
                 st.session_state.continuous_listener = None
                 st.session_state.stop_listening_event = None
                 processed_something = True
 
         except thread_queue.Empty:
             break
-    
+            
     return processed_something
-
+    
 def start_continuous_listening():
     """Start continuous listening in a separate thread with a stop event."""
     if st.session_state.continuous_listener is None or not st.session_state.continuous_listener.is_alive():
-        # Clear previous text and create new event
-        st.session_state.recognized_text = ""  # Start fresh
+        # Don't clear previous text, allow accumulation across recordings
         st.session_state.stop_listening_event = threading.Event()
         
         st.session_state.continuous_listener = threading.Thread(
@@ -143,11 +157,31 @@ def start_continuous_listening():
         print("Started continuous listening")
 
 def stop_continuous_listening():
-    """Signal the listening thread to stop."""
-    if st.session_state.stop_listening_event:
-        st.session_state.stop_listening_event.set()
-    st.session_state.listening = False
-    print("Stopped continuous listening")
+    """Signal the listening thread to stop and clean up."""
+    try:
+        # Signal thread to stop
+        if st.session_state.stop_listening_event:
+            st.session_state.stop_listening_event.set()
+        
+        # Ensure the final text is in the input box
+        if st.session_state.get("recognized_text"):
+            st.session_state.user_input_box_voice = st.session_state.recognized_text.strip()
+        
+        # Clean up thread
+        if st.session_state.continuous_listener and st.session_state.continuous_listener.is_alive():
+            st.session_state.continuous_listener.join(timeout=1.0)
+            
+        # Update UI state
+        st.session_state.listening = False
+        st.session_state.continuous_listener = None
+        st.session_state.stop_listening_event = None
+        print("Stopped continuous listening")
+    except Exception as e:
+        print(f"Error in stop_continuous_listening: {e}")
+        # Ensure state is cleaned up even if error occurs
+        st.session_state.listening = False
+        st.session_state.continuous_listener = None
+        st.session_state.stop_listening_event = None
 
 # --- Data Fetching Functions ---
 def get_float_timeseries(float_id):
@@ -566,18 +600,15 @@ with tab2:
     col_input, col_button = st.columns([4, 1])
 
     with col_input:
-        # Use recognized_text from session state as the input value so speech fills the text box
-        current_text = st.session_state.get("recognized_text", "")
+        # Initialize the text input value from session state
+        if "user_input_box_voice" not in st.session_state:
+            st.session_state.user_input_box_voice = st.session_state.get("recognized_text", "")
+        
         user_input = st.text_input(
             "Type your message or use voice input:",
-            value=current_text,
             key="user_input_box_voice",
             placeholder="Click the mic to start recording..."
         )
-
-        # If user manually edits the field while not listening, persist the typed value
-        if user_input != current_text and not st.session_state.get("listening", False):
-            st.session_state.recognized_text = user_input
 
     with col_button:
         st.write("")
@@ -595,9 +626,29 @@ with tab2:
 
         # Visual feedback while listening
         if st.session_state.get("listening", False):
-            st.info("🎤 Listening... Say 'stop listening' to finish.")
-            st.spinner("Capturing speech...")
+            # This block now correctly handles the UI updates while listening.
+            
+            # First, a safety check: if the thread has died for some reason, fix the state.
+            if not (st.session_state.continuous_listener and st.session_state.continuous_listener.is_alive()):
+                st.session_state.listening = False
+                st.rerun()
 
+            st.info("🎤 Listening... Say 'stop listening' to finish.")
+            
+            # This uses st.spinner as a context manager for a cleaner look
+            with st.spinner("Capturing speech..."):
+                # The loop now runs for a longer time, making it feel more responsive.
+                # It will be interrupted by a rerun as soon as new speech is detected.
+                for _ in range(25): # Increased range for a longer listening window (5 seconds)
+                    if not speech_results_queue.empty():
+                        st.rerun()
+                    time.sleep(0.2)
+
+            # If the loop finishes and we are still listening, it means the user was quiet.
+            # We can trigger one last rerun to keep the loop going if needed.
+            if st.session_state.get("listening", False):
+                st.rerun()
+                
         if st.session_state.get("last_speech_result") and st.session_state.last_speech_result != "success":
             st.warning(f"Speech recognition: {st.session_state.last_speech_result}")
 
