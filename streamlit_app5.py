@@ -60,7 +60,7 @@ def get_map_data_cached():
         return []
 
 # --- Speech Functions ---
-def continuous_listening_thread(queue, stop_event, stop_phrase="stop listening"):
+def continuous_listening_thread(queue, stop_event, stop_phrase="stop"):
     """Runs the listening generator in a thread."""
     try:
         print(f"🎯 Thread started with queue: {id(queue)}")
@@ -140,7 +140,7 @@ def start_continuous_listening():
         queue = st.session_state.speech_results_queue
         st.session_state.continuous_listener = threading.Thread(
             target=continuous_listening_thread,
-            args=(queue, st.session_state.stop_listening_event, "stop listening"),
+            args=(queue, st.session_state.stop_listening_event, "stop"),
             daemon=True
         )
         st.session_state.continuous_listener.start()
@@ -487,7 +487,7 @@ with tab2:
                 stop_continuous_listening()
                 st.rerun()
             else:
-                st.info("🎤 Listening... Say 'stop listening' to finish.")
+                st.info("🎤 Listening... Say 'stop' to finish.")
                 
                 # Process speech results while listening
                 if process_speech_results():

@@ -4,7 +4,7 @@ import time
 
 # Replace the function in spr_speech.py with this improved version
 
-def continuous_listening(stop_event, stop_phrase="stop listening"):
+def continuous_listening(stop_event, stop_phrase="stop"):
     """
     A more resilient version of the listening generator.
     It continues listening even if there are temporary network/API errors.
