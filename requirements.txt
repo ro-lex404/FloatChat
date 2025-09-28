@@ -1,19 +1,43 @@
-# --- Frontend (for streamlit_app2.py) ---
+# Core web frameworks
 streamlit
-pandas
-requests
-pydeck
-plotly
-
-# --- Backend (for app_4.py) ---
 fastapi
-uvicorn[standard]      # Includes standard dependencies for production server
-python-dotenv          # To load environment variables like GEMINI_API_KEY
-google-generativeai    # For Gemini API integration
-sentence-transformers  # For creating text embeddings
-faiss-cpu              # For the vector store (use faiss-gpu if you have a compatible GPU)
-argopy                 # For fetching ARGO float data
-async-lru              # For asynchronous caching in FastAPI
+uvicorn[standard]
 
-# --- Common/Implicit Dependencies (good to have explicit) ---
+# Data processing and scientific computing
+pandas
 numpy
+
+# Machine learning and AI
+sentence-transformers
+google-generativeai
+faiss-cpu
+
+# HTTP requests and API handling
+requests
+
+# Visualization
+plotly
+pydeck
+
+# Oceanographic data
+argopy
+
+# Async utilities
+async-lru
+
+# Speech recognition
+SpeechRecognition
+
+# Environment management
+python-dotenv
+
+# Threading and concurrency (usually included with Python but explicit for clarity)
+# queue - built-in module
+# threading - built-in module
+
+# Additional dependencies that might be needed by the above packages
+# (these are often installed automatically but listing for completeness)
+scikit-learn
+torch
+transformers
+pyaudio
