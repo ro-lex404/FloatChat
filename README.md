@@ -246,5 +246,5 @@ The application includes debug information in the chat interface:
 *Natural language queries with voice input support and context-aware responses*
 
 ### 🎤 Voice Recording Feature
-![Voice Recording](screenshots/voice-recording.png)
-*Real-time speech-to-text transcription with visual feedback and error resilience*
+[Watch the video](https://youtu.be/3hxrhf6kAGU)
+Real-time speech-to-text transcription with visual feedback and error resilience
