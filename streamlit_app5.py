@@ -240,7 +240,7 @@ st.markdown("""
 .main-header { font-size: 2.5rem; color: #0b5394; text-align: center; margin-bottom: 1.5rem; font-weight: 700; padding-bottom: 0.5rem; border-bottom: 2px solid #0b5394; }
 .section-header { font-size: 1.4rem; color: #0b5394; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #cfe2f3; font-weight: 600; }
 .card { color: black; background-color: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); border: 1px solid #cfe2f3; }
-.float-card { background-color: #e6f2ff; border-left: 4px solid #0b5394; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+.float-card { background-color: #e6f2ff; border-left: 4px solid #0b5394; padding: 15px; border-radius: 8px; margin-bottom: 15px; color:black;}
 .stButton button { width: 100%; border-radius: 6px; margin-bottom: 10px; transition: all 0.2s ease; background: linear-gradient(135deg, #0b5394 0%, #3d85c6 100%); color: white; border: none; padding: 10px; font-weight: 500; }
 .stButton button:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); background: linear-gradient(135deg, #0b5394 0%, #3d85c6 100%); color: white; }
 .chat-message-user { color: black; background-color: #e6f2ff; padding: 12px 16px; border-radius: 12px; margin-bottom: 12px; border-left: 4px solid #0b5394; font-size: 14px; }
