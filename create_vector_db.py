@@ -75,8 +75,23 @@ logging.info(f"Created {len(embeddings)} embeddings with dimension {embeddings.s
 logging.info("Building FAISS index...")
 d = embeddings.shape[1]
 
-# Use IndexFlatL2
-index = faiss.IndexFlatL2(d)
+dimension = 768
+n_vectors = 2614
+embeddings = np.random.random((n_vectors, dimension)).astype('float32')  # Your actual embeddings
+
+# 1. Create quantizer and index
+nlist = min(50, n_vectors // 10)  # Reasonable number of clusters
+quantizer = faiss.IndexFlatL2(dimension)
+index = faiss.IndexIVFFlat(quantizer, dimension, nlist, faiss.METRIC_L2)
+
+# 2. CHECK training status
+logging.info(f"Index trained before training? {index.is_trained}")  # False
+
+# 3. TRAIN the index (CRITICAL STEP!)
+logging.info("Training index...")
+index.train(embeddings)  # ← THIS WAS MISSING
+logging.info(f"Index trained after training? {index.is_trained}")  # True
+
 index.add(embeddings.astype('float32'))
 
 logging.info(f"FAISS index built with {index.ntotal} total vectors.")
